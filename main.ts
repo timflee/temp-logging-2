@@ -12,17 +12,9 @@ datalogger.onLogFull(function () {
     }
 })
 input.onButtonPressed(Button.A, function () {
-    let firstLoop: boolean;
-logging = !(logging)
+    logging = !(logging)
     if (logging) {
-        firstLoop = true
-        basic.showLeds(`
-            . . . . .
-            . . . . #
-            . . . # .
-            # . # . .
-            . # . . .
-            `)
+    	
     } else {
         basic.showIcon(IconNames.No)
     }
@@ -68,10 +60,10 @@ let tempDegExp = 0
 let logging = false
 let min2 = 0
 let max2 = 0
-let tempDeg = 0
-let tempADC = 0
-let receivedLine = ""
 let parsedLine : string[] = []
+let receivedLine = ""
+let tempADC = 0
+let tempDeg = 0
 let logging_Rate = 500
 serial.setBaudRate(BaudRate.BaudRate115200)
 let firstLoop2 = true
@@ -396,25 +388,40 @@ music.playTone(247, music.beat(BeatFraction.Sixteenth))
 function interpolate(value: number, x: number[] = [], y: number[] = []): number {
     //  return value + x +y
     //  find the index in x array that is smaller than x
-    let index = 0
+    let index2 = 0
     for (let test_x of x) {
         if (test_x < value) {
             break
         }
         
-        index += 1
+        index2 += 1
     }
-    return Math.map(value, x[index - 1], x[index], y[index - 1], y[index])
+    return Math.map(value, x[index2 - 1], x[index2], y[index2 - 1], y[index2])
 }
 let temperature = Math.map(5, 5, -365, 16, 4)
 let temperature2 = interpolate(150, resistance, temp)
-basic.forever(function () {
-	
-})
-loops.everyInterval(100, function () {
+loops.everyInterval(67, function () {
     let firstLoop3: boolean;
 let subBow: neopixel.Strip;
 if (logging) {
+        if (toggle) {
+            basic.showLeds(`
+                    . . . . .
+                                                                        . . . . #
+                                                                        . . . # .
+                                                                        # . # . .
+                                                                        . # . . .
+                `, 0)
+        } else {
+            basic.showLeds(`
+                    . . . . .
+                                                                        . . . . #
+                                                                        . . . # .
+                                                                        # . # . .
+                                                                        . # . . #
+                `, 0)
+        }
+        toggle = !(toggle)
         tempADC = pins.analogReadPin(AnalogPin.P1)
         tempDeg = interpolate(10 / (1023 / tempADC - 1), resistance, temp)
 if (firstLoop3) {
@@ -445,14 +452,11 @@ if (firstLoop3) {
         // strip.show()
         subBow = strip.range(0, Math.map(tempDegExp, min2, max2, 1, 13))
         subBow.showRainbow(1, 360)
-        if (toggle) {
-        	
-        } else {
-        	
-        }
-        toggle = !(toggle)
     } else {
         strip.clear()
         strip.show()
     }
+})
+basic.forever(function () {
+	
 })

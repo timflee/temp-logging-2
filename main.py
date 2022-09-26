@@ -8,7 +8,7 @@ def on_log_full():
                 # # # # #
                 # # # # #
     """)
-    while True:
+    for index in range(10):
         music.play_melody("C5 B A G F E D C ", 500)
 datalogger.on_log_full(on_log_full)
 
@@ -16,14 +16,7 @@ def on_button_pressed_a():
     global logging
     logging = not (logging)
     if logging:
-        firstLoop = True
-        basic.show_leds("""
-            . . . . .
-                        . . . . #
-                        . . . # .
-                        # . # . .
-                        . # . . .
-        """)
+        pass
     else:
         basic.show_icon(IconNames.NO)
 input.on_button_pressed(Button.A, on_button_pressed_a)
@@ -47,33 +40,34 @@ def on_button_pressed_b():
 input.on_button_pressed(Button.B, on_button_pressed_b)
 
 def on_data_received():
-    global receivedLine, parsedLine, command, arg1, max2, min2, logging_Rate
+    global receivedLine, parsedLine, command, arg1, max2, min2
     music.play_tone(494, music.beat(BeatFraction.SIXTEENTH))
     receivedLine = serial.read_line()
     parsedLine = receivedLine.split(":")
     command = parsedLine[0]
     arg1 = parsedLine[1]
-    if command == "max":
-        max2 = parse_float(arg1)
-    elif command == "min":
-        min2 = parse_float(arg1)
-    elif command == "loggingRate":
-        logging_Rate = parse_float(arg1)
+    if len(parsedLine) == 2:
+        if command == "max":
+            max2 = parse_float(arg1)
+        elif command == "min":
+            min2 = parse_float(arg1)
+        else:
+            music.play_tone(131, music.beat(BeatFraction.WHOLE))
     else:
         music.play_tone(131, music.beat(BeatFraction.WHOLE))
 serial.on_data_received(serial.delimiters(Delimiters.NEW_LINE), on_data_received)
 
-logging_Rate = 500
 arg1 = ""
 command = ""
-parsedLine: List[str] = []
-receivedLine = ""
 tempDegExp = 0
 logging = False
 min2 = 0
 max2 = 0
-tempADC = 0
 tempDeg = 0
+tempADC = 0
+receivedLine = ""
+parsedLine: List[str] = []
+logging_Rate = 500
 serial.set_baud_rate(BaudRate.BAUD_RATE115200)
 firstLoop2 = True
 alpha = 0.2
@@ -393,12 +387,12 @@ music.play_tone(247, music.beat(BeatFraction.SIXTEENTH))
 def interpolate(value: number, x: List[number] = [], y: List[number] = []):
     # return value + x +y
     # find the index in x array that is smaller than x
-    index = 0
+    index2 = 0
     for test_x in x:
         if test_x < value:
             break
-        index += 1
-    return Math.map(value, x[index - 1], x[index], y[index - 1], y[index])
+        index2 += 1
+    return Math.map(value, x[index2 - 1], x[index2], y[index2 - 1], y[index2])
 temperature = Math.map(5, 5, -365, 16, 4)
 temperature2 = interpolate(150, resistance, temp)
 
@@ -407,8 +401,27 @@ def on_forever():
 basic.forever(on_forever)
 
 def on_every_interval():
-    global tempADC, tempDeg, tempDegExp, min2, max2, toggle
+    global toggle, tempADC, tempDeg, tempDegExp, min2, max2
     if logging:
+        if toggle:
+            basic.show_leds("""
+                    . . . . .
+                                                                        . . . . #
+                                                                        . . . # .
+                                                                        # . # . .
+                                                                        . # . . .
+                """,
+                0)
+        else:
+            basic.show_leds("""
+                    . . . . .
+                                                                        . . . . #
+                                                                        . . . # .
+                                                                        # . # . .
+                                                                        . # . . #
+                """,
+                0)
+        toggle = not (toggle)
         tempADC = pins.analog_read_pin(AnalogPin.P1)
         tempDeg = interpolate(10 / (1023 / tempADC - 1), resistance, temp)
         if firstLoop3:
@@ -436,12 +449,7 @@ def on_every_interval():
         # strip.show()
         subBow = strip.range(0, Math.map(tempDegExp, min2, max2, 1, 13))
         subBow.show_rainbow(1, 360)
-        if toggle:
-            pass
-        else:
-            pass
-        toggle = not (toggle)
     else:
         strip.clear()
         strip.show()
-loops.every_interval(logging_Rate, on_every_interval)
+loops.every_interval(200, on_every_interval)
