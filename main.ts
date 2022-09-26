@@ -435,6 +435,11 @@ if (firstLoop3) {
             // determine if we have new max and min temps
             min2 = Math.min(min2, tempDegExp)
             max2 = Math.max(max2, tempDegExp)
+            serial.writeValue("Light", input.lightLevel())
+            serial.writeValue("Temp", input.temperature())
+            serial.writeValue("Temp_Thermistor_Exp", tempDegExp)
+            serial.writeValue("Sound", input.soundLevel())
+            serial.writeValue("Temp_Thermistor", tempDeg)
             datalogger.log(
             datalogger.createCV("Light", input.lightLevel()),
             datalogger.createCV("Temp", input.temperature()),
