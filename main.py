@@ -63,10 +63,10 @@ tempDegExp = 0
 logging = False
 min2 = 0
 max2 = 0
-tempDeg = 0
-tempADC = 0
-receivedLine = ""
 parsedLine: List[str] = []
+receivedLine = ""
+tempADC = 0
+tempDeg = 0
 logging_Rate = 500
 serial.set_baud_rate(BaudRate.BAUD_RATE115200)
 firstLoop2 = True
@@ -397,59 +397,51 @@ temperature = Math.map(5, 5, -365, 16, 4)
 temperature2 = interpolate(150, resistance, temp)
 
 def on_forever():
-    pass
-basic.forever(on_forever)
-
-def on_every_interval():
     global toggle, tempADC, tempDeg, tempDegExp, min2, max2
-    if logging:
-        if toggle:
-            basic.show_leds("""
-                    . . . . .
-                                                                        . . . . #
-                                                                        . . . # .
-                                                                        # . # . .
-                                                                        . # . . .
-                """,
-                0)
+    while True:
+        if logging:
+            if toggle:
+                basic.show_leds("""
+                        . . . . .
+                                                                                                . . . . #
+                                                                                                . . . # .
+                                                                                                # . # . .
+                                                                                                . # . . .
+                    """,
+                    0)
+            else:
+                basic.show_leds("""
+                        . . . . .
+                                                                                                . . . . #
+                                                                                                . . . # .
+                                                                                                # . # . .
+                                                                                                . # . . #
+                    """,
+                    0)
+            toggle = not (toggle)
+            tempADC = pins.analog_read_pin(AnalogPin.P1)
+            tempDeg = interpolate(10 / (1023 / tempADC - 1), resistance, temp)
+            if firstLoop3:
+                tempDegExp = tempDeg
+                firstLoop3 = False
+            else:
+                tempDegExp = alpha * tempDeg + (1 - alpha) * tempDegExp
+            # determine if we have new max and min temps
+            min2 = min(min2, tempDegExp)
+            max2 = max(max2, tempDegExp)
+            datalogger.log(datalogger.create_cv("Light", input.light_level()),
+                datalogger.create_cv("Temp", input.temperature()),
+                datalogger.create_cv("Temp_Thermistor", tempDeg),
+                datalogger.create_cv("Temp_Thermistor_Exp", tempDegExp),
+                datalogger.create_cv("Sound", input.sound_level()))
+            strip.clear()
+            # strip.set_pixel_color(Math.map(input.temperature(), 25, 30, 0, 12),
+            # neopixel.colors(NeoPixelColors.VIOLET))
+            # strip.set_pixel_color(Math.map(tempDeg, min2, max2, 0, 12), neopixel.colors(NeoPixelColors.VIOLET))
+            # strip.show()
+            subBow = strip.range(0, Math.map(tempDegExp, min2, max2, 1, 13))
+            subBow.show_rainbow(1, 360)
         else:
-            basic.show_leds("""
-                    . . . . .
-                                                                        . . . . #
-                                                                        . . . # .
-                                                                        # . # . .
-                                                                        . # . . #
-                """,
-                0)
-        toggle = not (toggle)
-        tempADC = pins.analog_read_pin(AnalogPin.P1)
-        tempDeg = interpolate(10 / (1023 / tempADC - 1), resistance, temp)
-        if firstLoop3:
-            tempDegExp = tempDeg
-            firstLoop3 = False
-        else:
-            tempDegExp = alpha * tempDeg + (1 - alpha) * tempDegExp
-        # determine if we have new max and min temps
-        min2 = min(min2, tempDegExp)
-        max2 = max(max2, tempDegExp)
-        serial.write_value("Light", input.light_level())
-        serial.write_value("Temp", input.temperature())
-        serial.write_value("Temp_Thermistor_Exp", tempDegExp)
-        serial.write_value("Temp_Thermistor", tempDeg)
-        serial.write_value("Sound", input.sound_level())
-        datalogger.log(datalogger.create_cv("Light", input.light_level()),
-            datalogger.create_cv("Temp", input.temperature()),
-            datalogger.create_cv("Temp_Thermistor", tempDeg),
-            datalogger.create_cv("Temp_Thermistor_Exp", tempDegExp),
-            datalogger.create_cv("Sound", input.sound_level()))
-        strip.clear()
-        # strip.set_pixel_color(Math.map(input.temperature(), 25, 30, 0, 12),
-        # neopixel.colors(NeoPixelColors.VIOLET))
-        # strip.set_pixel_color(Math.map(tempDeg, min2, max2, 0, 12), neopixel.colors(NeoPixelColors.VIOLET))
-        # strip.show()
-        subBow = strip.range(0, Math.map(tempDegExp, min2, max2, 1, 13))
-        subBow.show_rainbow(1, 360)
-    else:
-        strip.clear()
-        strip.show()
-loops.every_interval(200, on_every_interval)
+            strip.clear()
+            strip.show()
+basic.forever(on_forever)

@@ -67,7 +67,7 @@ let tempDeg = 0
 let logging_Rate = 500
 serial.setBaudRate(BaudRate.BaudRate115200)
 let firstLoop2 = true
-let alpha = 0.2
+let alpha = 0.05
 max2 = -100
 min2 = 300
 logging = false
@@ -400,63 +400,58 @@ function interpolate(value: number, x: number[] = [], y: number[] = []): number 
 }
 let temperature = Math.map(5, 5, -365, 16, 4)
 let temperature2 = interpolate(150, resistance, temp)
-loops.everyInterval(67, function () {
-    let firstLoop3: boolean;
+basic.forever(function () {
+    while (true) {
+        basic.pause(0)
+        let firstLoop3: boolean;
 let subBow: neopixel.Strip;
 if (logging) {
-        if (toggle) {
-            basic.showLeds(`
+            if (toggle) {
+                basic.showLeds(`
                     . . . . .
                                                                         . . . . #
                                                                         . . . # .
                                                                         # . # . .
                                                                         . # . . .
                 `, 0)
-        } else {
-            basic.showLeds(`
+            } else {
+                basic.showLeds(`
                     . . . . .
                                                                         . . . . #
                                                                         . . . # .
                                                                         # . # . .
                                                                         . # . . #
                 `, 0)
-        }
-        toggle = !(toggle)
-        tempADC = pins.analogReadPin(AnalogPin.P1)
-        tempDeg = interpolate(10 / (1023 / tempADC - 1), resistance, temp)
+            }
+            toggle = !(toggle)
+            tempADC = pins.analogReadPin(AnalogPin.P1)
+            tempDeg = interpolate(10 / (1023 / tempADC - 1), resistance, temp)
 if (firstLoop3) {
-            tempDegExp = tempDeg
-            firstLoop3 = false
+                tempDegExp = tempDeg
+                firstLoop3 = false
+            } else {
+                tempDegExp = alpha * tempDeg + (1 - alpha) * tempDegExp
+            }
+            // determine if we have new max and min temps
+            min2 = Math.min(min2, tempDegExp)
+            max2 = Math.max(max2, tempDegExp)
+            datalogger.log(
+            datalogger.createCV("Light", input.lightLevel()),
+            datalogger.createCV("Temp", input.temperature()),
+            datalogger.createCV("Temp_Thermistor", tempDeg),
+            datalogger.createCV("Temp_Thermistor_Exp", tempDegExp),
+            datalogger.createCV("Sound", input.soundLevel())
+            )
+            strip.clear()
+            // strip.set_pixel_color(Math.map(input.temperature(), 25, 30, 0, 12),
+            // neopixel.colors(NeoPixelColors.VIOLET))
+            // strip.set_pixel_color(Math.map(tempDeg, min2, max2, 0, 12), neopixel.colors(NeoPixelColors.VIOLET))
+            // strip.show()
+            subBow = strip.range(0, Math.map(tempDegExp, min2, max2, 1, 13))
+            subBow.showRainbow(1, 360)
         } else {
-            tempDegExp = alpha * tempDeg + (1 - alpha) * tempDegExp
+            strip.clear()
+            strip.show()
         }
-        // determine if we have new max and min temps
-        min2 = Math.min(min2, tempDegExp)
-        max2 = Math.max(max2, tempDegExp)
-        serial.writeValue("Light", input.lightLevel())
-        serial.writeValue("Temp", input.temperature())
-        serial.writeValue("Temp_Thermistor_Exp", tempDegExp)
-        serial.writeValue("Temp_Thermistor", tempDeg)
-        serial.writeValue("Sound", input.soundLevel())
-        datalogger.log(
-        datalogger.createCV("Light", input.lightLevel()),
-        datalogger.createCV("Temp", input.temperature()),
-        datalogger.createCV("Temp_Thermistor", tempDeg),
-        datalogger.createCV("Temp_Thermistor_Exp", tempDegExp),
-        datalogger.createCV("Sound", input.soundLevel())
-        )
-        strip.clear()
-        // strip.set_pixel_color(Math.map(input.temperature(), 25, 30, 0, 12),
-        // neopixel.colors(NeoPixelColors.VIOLET))
-        // strip.set_pixel_color(Math.map(tempDeg, min2, max2, 0, 12), neopixel.colors(NeoPixelColors.VIOLET))
-        // strip.show()
-        subBow = strip.range(0, Math.map(tempDegExp, min2, max2, 1, 13))
-        subBow.showRainbow(1, 360)
-    } else {
-        strip.clear()
-        strip.show()
     }
-})
-basic.forever(function () {
-	
 })
